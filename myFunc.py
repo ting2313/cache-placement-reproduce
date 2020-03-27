@@ -94,20 +94,20 @@ def u_m(m, s_list, d_pbs_list):
         for f in range(1,F+1):
             inner += b_m(d_pbs_list[pbs])*popularity(f)*L*(1-s_list[pbs][f])
         term_1 += pow(inner,0.5)
-    
-    print(term_1+a_total)
 
     return term_1+a_total
 
 def a_iteration(m, s_list, d_pbs_list):
     for f in range(1,F+1):
+        # set arguments
         J = popularity(f)*C-popularity(f)*L*(f-1)-w_f(f)
         b = b_m(d_pbs_list[m])
         u = u_m(m, s_list, d_pbs_list)
         q = popularity(f)
 
+        # set coeff ans solve equation
         z_0 = b**2*u*J
-        z_1 = b**3*q*L*J+b**2*q**2*L*D*W*J
+        z_1 = b**3*q*L*J**2+b**2*q**2*L*D*W*J
         z_2 = 2*b**2*u*q*L*J
         z_3 = -2*b**2*q*L*J
         z_4 = b*u*q*L
@@ -115,18 +115,35 @@ def a_iteration(m, s_list, d_pbs_list):
 
         coeff = [z_5, z_4, z_3, z_2, z_1, z_0]
         ans = np.roots(coeff)
+        print(ans)
+        # find max real root
         ans = ans.real[abs(ans.imag)<1e-5]
-        S_root = abs(ans).max
-        S_mf = (b*(q*L)*(F-f+1)-max_root**2)/b*q*L
+        S_root = max([abs(i)for i in ans])
+
+        # get Smf
+        S_mf = (b*w_f(f)-S_root**2)/b*q*L
+        S_max =(C-L*(f-1))/L
+        print(S_mf) # output:(S_mf)<0
+        S_mf = min([S_mf,0,S_max])
+        # print(S_mf) # output:S_max
+        
+        # # update new Smf
+        # s_list[m][f] = (u+sqrt(b*w_f(f)-b*q*L*S_mf))**2/W + (w_f(f)*D-q*L*D*S_mf)/(C-L*(f-1)-L*S_mf)
+        # print(s_list[m][f])
+
+
+
+
         
 
-u_list = [[0.05],[0.02,0.01],[]]
-else_list = [[[0.5,0.5]],[[0.5,0.9],[0.3,0.7]],[]]
-s_list = [[0],[0],[0]]
-for x in range(0,1000):
+u_list = [[0.05],[0.02,0.01],[]]  # u_list[BS][user]=dist(user,BS)
+else_list = [[[0.5,0.5]],[[0.5,0.9],[0.3,0.7]],[]] # u_list[BS][user][other BS]=dist(user,other BS)
+s_list = [[0],[0],[0]]  # s_list[BS][file]= the radio of the memory of file in the BS
+for x in range(0,1000): # init(append 1000 files)
     s_list[0].append(0)
     s_list[1].append(0)
     s_list[2].append(0)
 a_total = a_init(u_list, else_list)
 u_m(1, s_list, [0,0.3,0.4])
 u_m(2, s_list, [0,0.3,0.4])
+a_iteration(0,s_list,[0.3,0.5,0.4])
